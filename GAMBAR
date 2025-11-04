@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Tebak Gambar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            font-size: 1.1em;
+        }
+        
+        .game-area {
+            padding: 30px;
+        }
+        
+        .slide {
+            display: none;
+        }
+        
+        .slide.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .image-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 25px;
+            border: 3px solid #667eea;
+        }
+        
+        .full-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: blur(20px);
+            transition: filter 0.5s;
+        }
+        
+        .full-image.revealed {
+            filter: blur(0);
+        }
+        
+        .clue-window {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px;
+            height: 150px;
+            border: 4px solid #fff;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.85);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.5s;
+        }
+        
+        .clue-window.revealed {
+            width: 100%;
+            height: 100%;
+            box-shadow: none;
+            border: none;
+        }
+        
+        .clue-image {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .upload-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px dashed #667eea;
+        }
+        
+        .upload-section h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1em;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            transition: border 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 30px;
+            font-size: 1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .feedback {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            min-height: 30px;
+        }
+        
+        .feedback.correct {
+            color: #28a745;
+            animation: bounce 0.5s;
+        }
+        
+        .feedback.wrong {
+            color: #dc3545;
+            animation: shake 0.5s;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        .progress {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+        
+        .final-screen {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .final-screen h2 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        
+        .final-score {
+            font-size: 3em;
+            color: #28a745;
+            margin: 20px 0;
+        }
+        
+        .mode-selector {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .mode-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .mode-btn {
+            padding: 30px 40px;
+            font-size: 1.2em;
+            background: white;
+            border: 3px solid #667eea;
+            color: #667eea;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .mode-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .hint {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            color: #856404;
+        }
+
+        .answer-input-section {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .answer-input-section label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Game Tebak Gambar</h1>
+            <div class="score-board">
+                <div>📊 Skor: <span id="score">0</span></div>
+                <div>💯 Benar: <span id="correct">0</span>/10</div>
+            </div>
+        </div>
+        
+        <div class="game-area">
+            <div id="modeSelector" class="mode-selector">
+                <h2>Pilih Mode Permainan</h2>
+                <div class="mode-buttons">
+                    <button class="mode-btn" onclick="startMode('play')">
+                        🎮 Main Game<br>
+                        <small>Gunakan gambar contoh</small>
+                    </button>
+                    <button class="mode-btn" onclick="startMode('setup')">
+                        ⚙️ Setup Game<br>
+                        <small>Upload gambar sendiri</small>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="gameSlides" style="display: none;">
+                <div class="progress">
+                    Soal <span id="currentSlide">1</span> dari 10
+                </div>
+                
+                <div class="slide active" data-slide="1">
+                    <div class="upload-section" id="upload1">
+                        <h3>📸 Upload Gambar untuk Soal 1</h3>
+                        <input type="file" id="file1" accept="image/*">
+                        <div class="answer-input-section">
+                            <label>Jawaban yang benar:</label>
+                            <input type="text" id="correctAnswer1" placeholder="Contoh: Soekarno">
+                        </div>
+                    </div>
+                    
+                    <div class="image-container">
+                        <img id="fullImage1" class="full-image" src="" alt="Gambar Soal 1">
+                        <div class="clue-window" id="clueWindow1">
+                            <img id="clueImage1" class="clue-image" src="" alt="Clue">
+                        </div>
+                    </div>
+                    
+                    <input type="text" id="answer1" placeholder="Ketik jawaban di sini...">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="checkAnswer(1)">Cek Jawaban</button>
+                        <button class="btn-secondary" onclick="showHint(1)">Perbesar Petunjuk (-2 poin)</button>
+                    </div>
+                    <div class="feedback" id="feedback1"></div>
+                </div>
+                
+                <div class="slide" data-slide="2">
+                    <div class="upload-section" id="upload2">
+                        <h3>📸 Upload Gambar untuk Soal 2</h3>
+                        <input type="file" id="file2" accept="image/*">
+                        <div class="answer-input-section">
+                            <label>Jawaban yang benar:</label>
+                            <input type="text" id="correctAnswer2" placeholder="Contoh: Harimau">
+                        </div>
+                    </div>
+                    <div class="image-container">
+                        <img id="fullImage2" class="full-image" src="" alt="Gambar Soal 2">
+                        <div class="clue-window" id="clueWindow2">
+                            <img id="clueImage2" class="clue-image" src="" alt="Clue">
+                        </div>
+                    </div>
+                    <input type="text" id="answer2" placeholder="Ketik jawaban di sini...">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="checkAnswer(2)">Cek Jawaban</button>
+                        <button class="btn-secondary" onclick="showHint(2)">Perbesar Petunjuk (-2 poin)</button>
+                    </div>
+                    <div class="feedback" id="feedback2"></div>
+                </div>
+
+                <div class="slide" data-slide="3">
+                    <div class="upload-section" id="upload3">
+                        <h3>📸 Upload Gambar untuk Soal 3</h3>
+                        <input type="file" id="file3" accept="image/*">
+                        <div class="answer-input-section">
+                            <label>Jawaban yang benar:</label>
+                            <input type="text" id="correctAnswer3" placeholder="Masukkan jawaban">
+                        </div>
+                    </div>
+                    <div class="image-container">
+                        <img id="fullImage3" class="full-image" src="" alt="Gambar Soal 3">
+                        <div class="clue-window" id="clueWindow3">
+                            <img id="clueImage3" class="clue-image" src="" alt="Clue">
+                        </div>
+                    </div>
+                    <input type="text" id="answer3" placeholder="Ketik jawaban di sini...">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="checkAnswer(3)">Cek Jawaban</button>
+                        <button class="btn-secondary" onclick="showHint(3)">Perbesar Petunjuk (-2 poin)</button>
+                    </div>
+                    <div class="feedback" id="feedback3"></div>
+                </div>
+
+                <div class="slide" data-slide="4">
+                    <div class="upload-section" id="upload4">
+                        <h3>📸 Upload Gambar untuk Soal 4</h3>
+                        <input type="file" id="file4" accept="image/*">
+                        <div class="answer-input-section">
+                            <label>Jawaban yang benar:</label>
+                            <input type="text" id="correctAnswer4" placeholder="Masukkan jawaban">
+                        </div>
+                    </div>
+                    <div class="image-container">
+                        <img id="fullImage4" class="full-image" src="" alt="Gambar Soal 4">
+                        <div class="clue-window" id="clueWindow4">
+                            <img id="clueImage4" class="clue-image" src="" alt="Clue">
+                        </div>
+                    </div>
+                    <input type="text" id="answer4" placeholder="Ketik jawaban di sini...">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="checkAnswer(4)">Cek Jawaban</button>
+                        <button class="btn-secondary" onclick="showHint(4)">Perbesar Petunjuk (-2 poin)</button>
+                    </div>
+                    <div class="feedback" id="feedback4"></div>
+                </div>
+
+                <div class="slide" data-slide="5">
+                    <div class="upload-section" id="upload5">
+                        <h3>📸 Upload Gambar untuk Soal 5</h3>
+                        <input type="file" id="file5" accept="image/*">
+                        <div class="answer-input-section">
+                            <label>Jawaban yang benar:</label>
+                            <input type="text" id="correctAnswer5" placeholder="Masukkan jawaban">
+                        </div>
+                    </div>
+                    <div class="image-container">
+                        <img id="fullImage5" class="full-image" src="" alt="Gambar Soal 5">
+                        <div class="clue-window" id="clueWindow5">
+                            <img id="clueImage5" class="clue-image" src="" alt="Clue">
+                        </div>
+                    </div>
+                    <input type="text" id="answer5" placeholder="Ketik jawaban di sini...">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="checkAnswer(5)">Cek Jawaban</button>
+                        <button class="btn-secondary" onclick="showHint(5)">Perbesar Petunjuk (-2 poin)</button>
+                    </div>
+                    <div class="feedback" id="feedback5"></div>
+                </div>
+
+                <div class="slide" data-slide="6">
+                    <div class="upload-section" id="upload6">
+                        <h3>📸 Upload Gambar untuk Soal 6</h3>
+                        <input type="file" id="file6" accept="image/*">
+                        <div class="answer-input-section">
+                            <label>Jawaban yang benar:</label>
+                            <input type="text" id="correctAnswer6" placeholder="Masukkan jawaban">
+                        </div>
+                    </div>
+                    <div class="image-container">
+                        <img id="fullImage6" class="full-image" src="" alt="Gambar Soal 6">
+                        <div class="clue-window" id="clueWindow6">
+                            <img id="clueImage6" class="clue-image" src="" alt="Clue">
+                        </div>
+                    </div>
+                    <input type="text" id="answer6" placeholder="Ketik jawaban di sini...">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="checkAnswer(6)">Cek Jawaban</button>
+                        <button class="btn-secondary" onclick="showHint(6)">Perbesar Petunjuk (-2 poin)</button>
+                    </div>
+                    <div class="feedback" id="feedback6"></div>
+                </div>
+
+                <div class="slide" data-slide="7">
+                    <div class="upload-section" id="upload7">
+                        <h3>📸 Upload Gambar untuk Soal 7</h3>
+                        <input type="file" id="file7" accept="image/*">
+                        <div class="answer-input-section">
+                            <label>Jawaban yang benar:</label>
+                            <input type="text" id="correctAnswer7" placeholder="Masukkan jawaban">
+                        </div>
+                    </div>
+                    <div class="image-container">
+                        <img id="fullImage7" class="full-image" src="" alt="Gambar Soal 7">
+                        <div class="clue-window" id="clueWindow7">
+                            <img id="clueImage7" class="clue-image" src="" alt="Clue">
+                        </div>
+                    </div>
+                    <input type="text" id="answer7" placeholder="Ketik jawaban di sini...">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="checkAnswer(7)">Cek Jawaban</button>
+                        <button class="btn-secondary" onclick="showHint(7)">Perbesar Petunjuk (-2 poin)</button>
+                    </div>
+                    <div class="feedback" id="feedback7"></div>
+                </div>
+
+                <div class="slide" data-slide="8">
+                    <div class="upload-section" id="upload8">
+                        <h3>📸 Upload Gambar untuk Soal 8</h3>
+                        <input type="file" id="file8" accept="image/*">
+                        <div class="answer-input-section">
+                            <label>Jawaban yang benar:</label>
+                            <input type="text" id="correctAnswer8" placeholder="Masukkan jawaban">
+                        </div>
+                    </div>
+                    <div class="image-container">
+                        <img id="fullImage8" class="full-image" src="" alt="Gambar Soal 8">
+                        <div class="clue-window" id="clueWindow8">
+                            <img id="clueImage8" class="clue-image" src="" alt="Clue">
+                        </div>
+                    </div>
+                    <input type="text" id="answer8" placeholder="Ketik jawaban di sini...">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="checkAnswer(8)">Cek Jawaban</button>
+                        <button class="btn-secondary" onclick="showHint(8)">Perbesar Petunjuk (-2 poin)</button>
+                    </div>
+                    <div class="feedback" id="feedback8"></div>
+                </div>
+
+                <div class="slide" data-slide="9">
+                    <div class="upload-section" id="upload9">
+                        <h3>📸 Upload Gambar untuk Soal 9</h3>
+                        <input type="file" id="file9" accept="image/*">
+                        <div class="answer-input-section">
+                            <label>Jawaban yang benar:</label>
+                            <input type="text" id="correctAnswer9" placeholder="Masukkan jawaban">
+                        </div>
+                    </div>
+                    <div class="image-container">
+                        <img id="fullImage9" class="full-image" src="" alt="Gambar Soal 9">
+                        <div class="clue-window" id="clueWindow9">
+                            <img id="clueImage9" class="clue-image" src="" alt="Clue">
+                        </div>
+                    </div>
+                    <input type="text" id="answer9" placeholder="Ketik jawaban di sini...">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="checkAnswer(9)">Cek Jawaban</button>
+                        <button class="btn-secondary" onclick="showHint(9)">Perbesar Petunjuk (-2 poin)</button>
+                    </div>
+                    <div class="feedback" id="feedback9"></div>
+                </div>
+
+                <div class="slide" data-slide="10">
+                    <div class="upload-section" id="upload10">
+                        <h3>📸 Upload Gambar untuk Soal 10</h3>
+                        <input type="file" id="file10" accept="image/*">
+                        <div class="answer-input-section">
+                            <label>Jawaban yang benar:</label>
+                            <input type="text" id="correctAnswer10" placeholder="Masukkan jawaban">
+                        </div>
+                    </div>
+                    <div class="image-container">
+                        <img id="fullImage10" class="full-image" src="" alt="Gambar Soal 10">
+                        <div class="clue-window" id="clueWindow10">
+                            <img id="clueImage10" class="clue-image" src="" alt="Clue">
+                        </div>
+                    </div>
+                    <input type="text" id="answer10" placeholder="Ketik jawaban di sini...">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="checkAnswer(10)">Cek Jawaban</button>
+                        <button class="btn-secondary" onclick="showHint(10)">Perbesar Petunjuk (-2 poin)</button>
+                    </div>
+                    <div class="feedback" id="feedback10"></div>
+                </div>
+            </div>
+            
+            <div id="finalScreen" style="display: none;" class="final-screen">
+                <h2>🎉 Selamat!</h2>
+                <p>Game Selesai!</p>
+                <div class="final-score" id="finalScore">0</div>
+                <p>Jawaban Benar: <span id="finalCorrect">0</span>/10</p>
+                <button class="btn-success" onclick="restartGame()">Main Lagi</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        let score = 0;
+        let correctAnswers = 0;
+        let mode = 'setup';
+        let gameData = {};
+        
+        const defaultData = [
+            {image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23667eea" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" font-size="40" fill="white" text-anchor="middle" dy=".3em"%3EGAMBAR 1%3C/text%3E%3C/svg%3E', answer: 'Gambar 1'},
+            {image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23764ba2" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" font-size="40" fill="white" text-anchor="middle" dy=".3em"%3EGAMBAR 2%3C/text%3E%3C/svg%3E', answer: 'Gambar 2'},
+            {image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23f093fb" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" font-size="40" fill="white" text-anchor="middle" dy=".3em"%3EGAMBAR 3%3C/text%3E%3C/svg%3E', answer: 'Gambar 3'},
+            {image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%234facfe" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" font-size="40" fill="white" text-anchor="middle" dy=".3em"%3EGAMBAR 4%3C/text%3E%3C/svg%3E', answer: 'Gambar 4'},
+            {image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%2343e97b" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" font-size="40" fill="white" text-anchor="middle" dy=".3em"%3EGAMBAR 5%3C/text%3E%3C/svg%3E', answer: 'Gambar 5'},
+            {image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23fa709a" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" font-size="40" fill="white" text-anchor="middle" dy=".3em"%3EGAMBAR 6%3C/text%3E%3C/svg%3E', answer: 'Gambar 6'},
+            {image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23fee140" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" font-size="40" fill="white" text-anchor="middle" dy=".3em"%3EGAMBAR 7%3C/text%3E%3C/svg%3E', answer: 'Gambar 7'},
+            {image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%2330cfd0" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" font-size="40" fill="white" text-anchor="middle" dy=".3em"%3EGAMBAR 8%3C/text%3E%3C/svg%3E', answer: 'Gambar 8'},
+            {image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23a8edea" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" font-size="40" fill="white" text-anchor="middle" dy=".3em"%3EGAMBAR 9%3C/text%3E%3C/svg%3E', answer: 'Gambar 9'},
+            {image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23ff6a00" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" font-size="40" fill="white" text-anchor="middle" dy=".3em"%3EGAMBAR 10%3C/text%3E%3C/svg%3E', answer: 'Gambar 10'}
+        ];
+        
+        function startMode(selectedMode) {
+            mode = selectedMode;
+            document.getElementById('modeSelector').style.display = 'none';
+            document.getElementById('gameSlides').style.display = 'block';
+            
+            if (mode === 'play') {
+                for (let i = 1; i <= 10; i++) {
+                    document.getElementById('upload' + i).style.display = 'none';
+                    const data = defaultData[i - 1];
+                    gameData[i] = {answer: data.answer};
+                    document.getElementById('fullImage' + i).src = data.image;
+                    document.getElementById('clueImage' + i).src = data.image;
+                }
+            } else {
+                for (let i = 1; i <= 10; i++) {
+                    setupFileUpload(i);
+                }
+            }
+        }
+        
+        function setupFileUpload(slideNum) {
